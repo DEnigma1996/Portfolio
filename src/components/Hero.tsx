@@ -1,20 +1,24 @@
 import { useState, useEffect } from 'react';
+import type { Page } from '../App';
 import './Hero.css';
 
-export default function Hero() {
+interface HeroProps {
+  setPage: (p: Page) => void;
+}
+
+export default function Hero({ setPage }: HeroProps) {
   const [displayText, setDisplayText] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
   const texts = [
     'Full-Stack Java Developer',
     'Backend Architect',
     'Problem Solver',
-    'Clean Code Advocate'
+    'Clean Code Advocate',
   ];
   const [textIndex, setTextIndex] = useState(0);
 
   useEffect(() => {
     const currentText = texts[textIndex];
-
     if (currentIndex < currentText.length) {
       const timeout = setTimeout(() => {
         setDisplayText(currentText.substring(0, currentIndex + 1));
@@ -32,10 +36,7 @@ export default function Hero() {
   }, [currentIndex, textIndex]);
 
   const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
@@ -56,6 +57,9 @@ export default function Hero() {
             </button>
             <button className="btn btn-secondary" onClick={() => scrollToSection('contact')}>
               Contact Me
+            </button>
+            <button className="btn btn-learn" onClick={() => setPage('learn')}>
+              📚 Java Course
             </button>
           </div>
         </div>

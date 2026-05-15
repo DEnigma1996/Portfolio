@@ -1,6 +1,11 @@
+import type { Page } from '../App';
 import './Footer.css';
 
-export default function Footer() {
+interface FooterProps {
+  setPage: (p: Page) => void;
+}
+
+export default function Footer({ setPage }: FooterProps) {
   return (
     <footer className="footer">
       <div className="footer-content">
@@ -17,6 +22,13 @@ export default function Footer() {
             <a href="#projects">Projects</a>
             <a href="#experience">Experience</a>
             <a href="#contact">Contact</a>
+            <a
+              href="#learn"
+              onClick={e => { e.preventDefault(); setPage('learn'); window.scrollTo({ top: 0 }); }}
+              style={{ color: 'var(--primary-color)', fontWeight: 600 }}
+            >
+              📚 Java Course
+            </a>
           </nav>
         </div>
 
