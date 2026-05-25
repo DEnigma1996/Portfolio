@@ -163,6 +163,9 @@
   overflow: hidden;
   cursor: pointer;
   transition: box-shadow 0.2s, transform 0.2s;
+  width: 100%;
+  text-align: left;
+  padding: 0;
 }
 
 .phase-card:hover {
@@ -490,6 +493,7 @@
 .week-check {
   width: 16px;
   height: 16px;
+  padding: 0;
   border-radius: 50%;
   border: 1.5px solid var(--border-color);
   display: flex;
@@ -656,10 +660,7 @@
 }
 
 .dash-header-top {
-  display: flex;
-  justify-content: flex-end;
-  padding: 0.75rem 2rem 0;
-  background: #0C1E35;
+  height: 0;
 }
 
 /* ── Responsive ── */

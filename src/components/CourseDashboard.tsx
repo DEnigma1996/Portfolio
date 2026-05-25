@@ -1,18 +1,22 @@
-import { useState, useCallback } from 'react';
-import { SESSIONS, PHASES, WEEK_DATA, type PhaseFilter } from '../data/courseData';
+import { useCallback, useEffect, useState } from 'react';
+import { PHASES, SESSIONS, WEEK_DATA, type PhaseFilter } from '../data/courseData';
 import './CourseDashboard.css';
 
-type Tab = 'overview' | 'sessions' | 'planner' | 'blog';
+export type Tab = 'overview' | 'sessions' | 'planner' | 'blog';
 
 interface Props {
-  onBack: () => void;
+  initialTab?: Tab;
+  onTabChange?: (tab: Tab) => void;
 }
 
 const STORAGE_KEY = 'jf_done';
 
 function loadDone(): number[] {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-  catch { return []; }
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  } catch {
+    return [];
+  }
 }
 
 function saveDone(done: number[]) {
@@ -25,51 +29,67 @@ function levelClass(l: string) {
   return 'intermediate';
 }
 
-export default function CourseDashboard({ onBack }: Props) {
-  const [tab, setTab] = useState<Tab>('overview');
+function toTabLabel(tab: Tab) {
+  if (tab === 'overview') return 'Overview';
+  if (tab === 'sessions') return 'All Sessions';
+  if (tab === 'planner') return 'Study Planner';
+  return 'Blog & Social';
+}
+
+export default function CourseDashboard({ initialTab = 'overview', onTabChange }: Props) {
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [done, setDone] = useState<number[]>(loadDone);
   const [filter, setFilter] = useState<PhaseFilter>('all');
   const [openSessions, setOpenSessions] = useState<Set<number>>(new Set());
 
+  useEffect(() => {
+    setTab(initialTab);
+  }, [initialTab]);
+
   const doneSet = new Set(done);
   const doneCount = done.length;
-  const pct = Math.round((doneCount / 30) * 100);
+  const pct = Math.round((doneCount / SESSIONS.length) * 100);
+
+  const changeTab = useCallback(
+    (nextTab: Tab) => {
+      setTab(nextTab);
+      onTabChange?.(nextTab);
+    },
+    [onTabChange]
+  );
 
   const toggleDone = useCallback((n: number) => {
-    setDone(prev => {
-      const next = prev.includes(n) ? prev.filter(x => x !== n) : [...prev, n];
+    setDone((prev) => {
+      const next = prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n];
       saveDone(next);
       return next;
     });
   }, []);
 
   const toggleOpen = useCallback((n: number) => {
-    setOpenSessions(prev => {
+    setOpenSessions((prev) => {
       const next = new Set(prev);
-      next.has(n) ? next.delete(n) : next.add(n);
+      if (next.has(n)) {
+        next.delete(n);
+      } else {
+        next.add(n);
+      }
       return next;
     });
   }, []);
 
   const goToPhase = (phaseId: string) => {
     setFilter(phaseId as PhaseFilter);
-    setTab('sessions');
+    changeTab('sessions');
   };
 
-  const filteredSessions = filter === 'all'
-    ? SESSIONS
-    : SESSIONS.filter(s => s.ph === filter);
+  const filteredSessions =
+    filter === 'all' ? SESSIONS : SESSIONS.filter((s) => s.ph === filter);
 
   return (
     <div className="course-dashboard">
-      {/* Top bar with back button */}
-      <div className="dash-header-top">
-        <button className="dash-back-btn" onClick={onBack}>
-          ← Back to Portfolio
-        </button>
-      </div>
+      <div className="dash-header-top"></div>
 
-      {/* Header */}
       <div className="dash-header">
         <div className="dash-header-text">
           <h1>Java Fullstack Development</h1>
@@ -81,7 +101,7 @@ export default function CourseDashboard({ onBack }: Props) {
             <span className="dash-stat-lbl">Sessions Done</span>
           </div>
           <div className="dash-stat">
-            <span className="dash-stat-num">30</span>
+            <span className="dash-stat-num">{SESSIONS.length}</span>
             <span className="dash-stat-lbl">Total Sessions</span>
           </div>
           <div className="dash-stat">
@@ -95,22 +115,20 @@ export default function CourseDashboard({ onBack }: Props) {
         </div>
       </div>
 
-      {/* Tab nav */}
-      <nav className="dash-nav">
-        {(['overview','sessions','planner','blog'] as Tab[]).map(t => (
+      <nav className="dash-nav" aria-label="Learning dashboard tabs">
+        {(['overview', 'sessions', 'planner', 'blog'] as Tab[]).map((nextTab) => (
           <button
-            key={t}
-            className={`dash-nav-btn ${tab === t ? 'active' : ''}`}
-            onClick={() => setTab(t)}
+            key={nextTab}
+            className={`dash-nav-btn ${tab === nextTab ? 'active' : ''}`}
+            onClick={() => changeTab(nextTab)}
+            aria-current={tab === nextTab ? 'page' : undefined}
           >
-            {t === 'overview' ? 'Overview' : t === 'sessions' ? 'All Sessions' : t === 'planner' ? 'Study Planner' : 'Blog & Social'}
+            {toTabLabel(nextTab)}
           </button>
         ))}
       </nav>
 
       <div className="dash-main">
-
-        {/* ═══════════════ OVERVIEW ═══════════════ */}
         {tab === 'overview' && (
           <>
             <div className="prog-block">
@@ -121,18 +139,21 @@ export default function CourseDashboard({ onBack }: Props) {
                 <div className="prog-bar-fill" style={{ width: `${pct}%` }} />
               </div>
               <div className="prog-nums">
-                <span>{doneCount} / 30 sessions completed</span>
+                <span>
+                  {doneCount} / {SESSIONS.length} sessions completed
+                </span>
                 <span>{pct}%</span>
               </div>
             </div>
 
             <div className="phase-grid">
-              {PHASES.map(ph => {
+              {PHASES.map((ph) => {
                 const total = ph.sessions.length;
-                const cnt = ph.sessions.filter(s => doneSet.has(s)).length;
+                const cnt = ph.sessions.filter((s) => doneSet.has(s)).length;
                 return (
-                  <div
+                  <button
                     key={ph.id}
+                    type="button"
                     className="phase-card"
                     onClick={() => goToPhase(ph.id)}
                   >
@@ -143,7 +164,9 @@ export default function CourseDashboard({ onBack }: Props) {
                           S{ph.sessions[0]}–S{ph.sessions[ph.sessions.length - 1]} · {total} sessions
                         </div>
                       </div>
-                      <div className="phase-card-count">{cnt}/{total}</div>
+                      <div className="phase-card-count">
+                        {cnt}/{total}
+                      </div>
                     </div>
                     <div className="phase-card-body">
                       <div className="phase-mini-bar">
@@ -154,18 +177,19 @@ export default function CourseDashboard({ onBack }: Props) {
                       </div>
                       <div className="phase-topics">{ph.topics}</div>
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
           </>
         )}
 
-        {/* ═══════════════ SESSIONS ═══════════════ */}
         {tab === 'sessions' && (
           <>
             <div className="filter-bar">
-              {(['all', 'Core Java', 'Spring Boot', 'Data Layer', 'Security', 'Distributed', 'Roadmap.sh'] as PhaseFilter[]).map(f => (
+              {(
+                ['all', 'Core Java', 'Spring Boot', 'Data Layer', 'Security', 'Distributed', 'Roadmap.sh'] as PhaseFilter[]
+              ).map((f) => (
                 <button
                   key={f}
                   className={`filter-chip ${filter === f ? 'active' : ''}`}
@@ -177,13 +201,25 @@ export default function CourseDashboard({ onBack }: Props) {
             </div>
 
             <div className="sessions-list">
-              {filteredSessions.map(s => {
-                const phase = PHASES.find(p => p.id === s.ph) ?? { color: '#5F5E5A' };
+              {filteredSessions.map((s) => {
+                const phase = PHASES.find((p) => p.id === s.ph) ?? { color: '#5F5E5A' };
                 const isOpen = openSessions.has(s.n);
                 const isDone = doneSet.has(s.n);
                 return (
                   <div key={s.n} className="session-card">
-                    <div className="session-header" onClick={() => toggleOpen(s.n)}>
+                    <div
+                      className="session-header"
+                      role="button"
+                      tabIndex={0}
+                      aria-expanded={isOpen}
+                      onClick={() => toggleOpen(s.n)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          toggleOpen(s.n);
+                        }
+                      }}
+                    >
                       <div className="session-num" style={{ background: phase.color }}>
                         S{s.n}
                       </div>
@@ -193,24 +229,27 @@ export default function CourseDashboard({ onBack }: Props) {
                           {s.w} · {s.ph} · {s.ex} exercises · {s.hr} HackerRank
                         </div>
                       </div>
-                      <div className="session-actions" onClick={e => e.stopPropagation()}>
+                      <div className="session-actions" onClick={(e) => e.stopPropagation()}>
                         <button
                           className={`session-check ${isDone ? 'done' : ''}`}
                           onClick={() => toggleDone(s.n)}
                           aria-label="Toggle complete"
+                          aria-pressed={isDone}
                         >
                           {isDone ? '✓' : ''}
                         </button>
                         <button
                           className="session-toggle"
                           onClick={() => toggleOpen(s.n)}
+                          aria-expanded={isOpen}
+                          aria-controls={`session-body-${s.n}`}
                         >
                           {isOpen ? 'Close' : 'Details'}
                         </button>
                       </div>
                     </div>
 
-                    <div className={`session-body ${isOpen ? 'open' : ''}`}>
+                    <div id={`session-body-${s.n}`} className={`session-body ${isOpen ? 'open' : ''}`}>
                       <div className="session-section">
                         <div className="session-section-title">Topics</div>
                         <div className="session-topics-text">{s.topics}</div>
@@ -233,7 +272,9 @@ export default function CourseDashboard({ onBack }: Props) {
                           <div className="session-section-title">HackerRank Challenges</div>
                           <div className="hr-chips">
                             {s.hrlinks.map((h, i) => (
-                              <span key={i} className="hr-chip">{h}</span>
+                              <span key={i} className="hr-chip">
+                                {h}
+                              </span>
                             ))}
                           </div>
                         </div>
@@ -246,31 +287,33 @@ export default function CourseDashboard({ onBack }: Props) {
           </>
         )}
 
-        {/* ═══════════════ PLANNER ═══════════════ */}
         {tab === 'planner' && (
           <div className="planner-grid">
-            {WEEK_DATA.map(wk => (
+            {WEEK_DATA.map((wk) => (
               <div key={wk.w} className="week-card">
                 <div className="week-card-hdr" style={{ background: wk.color }}>
                   <span className="week-num">{wk.w}</span>
                   <span className="week-theme">{wk.theme}</span>
                 </div>
                 <div className="week-card-body">
-                  {wk.sessions.map(sn => {
-                    const s = SESSIONS.find(x => x.n === sn);
+                  {wk.sessions.map((sn) => {
+                    const session = SESSIONS.find((x) => x.n === sn);
                     const isDone = doneSet.has(sn);
                     return (
                       <div key={sn} className="week-session-row">
                         <div className="week-snum" style={{ background: wk.color }}>
                           S{sn}
                         </div>
-                        <div className="week-sname">{s?.t ?? ''}</div>
-                        <div
+                        <div className="week-sname">{session?.t ?? ''}</div>
+                        <button
+                          type="button"
                           className={`week-check ${isDone ? 'done' : ''}`}
                           onClick={() => toggleDone(sn)}
+                          aria-label={`Toggle completion for session ${sn}`}
+                          aria-pressed={isDone}
                         >
                           {isDone ? '✓' : ''}
-                        </div>
+                        </button>
                       </div>
                     );
                   })}
@@ -280,10 +323,8 @@ export default function CourseDashboard({ onBack }: Props) {
           </div>
         )}
 
-        {/* ═══════════════ BLOG & SOCIAL ═══════════════ */}
         {tab === 'blog' && (
           <>
-            {/* SEO Section */}
             <div className="blog-section">
               <h3>SEO-Optimized Blog Titles</h3>
               <div className="blog-title-item">Java Fullstack Development Roadmap 2025: Complete 30-Session Course from OOP to Microservices</div>
@@ -300,14 +341,13 @@ export default function CourseDashboard({ onBack }: Props) {
               <div>
                 <div className="kw-label">Target Keywords</div>
                 <div className="kw-pills">
-                  {['java fullstack tutorial 2025','spring boot complete guide','java backend developer roadmap','java interview preparation','microservices java spring','kafka spring boot tutorial','spring security jwt tutorial','java jpa hibernate tutorial','docker java spring boot','java design patterns gof'].map(kw => (
+                  {['java fullstack tutorial 2025', 'spring boot complete guide', 'java backend developer roadmap', 'java interview preparation', 'microservices java spring', 'kafka spring boot tutorial', 'spring security jwt tutorial', 'java jpa hibernate tutorial', 'docker java spring boot', 'java design patterns gof'].map((kw) => (
                     <span key={kw} className="kw-pill">{kw}</span>
                   ))}
                 </div>
               </div>
             </div>
 
-            {/* LinkedIn */}
             <div className="blog-section">
               <h3>LinkedIn Post</h3>
               <div className="social-post-card" style={{ borderLeftColor: '#0A66C2' }}>
@@ -325,7 +365,7 @@ export default function CourseDashboard({ onBack }: Props) {
 𝗗𝗮𝘁𝗮 𝗟𝗮𝘆𝗲𝗿 (S9–S12)
 → JPA, Hibernate, N+1 problem, JUnit 5, Mockito, TDD
 
-𝗦𝗲𝗰𝘂𝗿𝗶𝘁𝘆 (S13–S16)
+Security (S13–S16)
 → Redis caching, Spring Security, JWT, OAuth 2.0, GitHub Login
 
 𝗗𝗶𝘀𝘁𝗿𝗶𝗯𝘂𝘁𝗲𝗱 (S17–S20)
@@ -342,7 +382,6 @@ What's the hardest Java topic you've tackled? Drop it below ⬇️`}</div>
               </div>
             </div>
 
-            {/* Twitter Thread */}
             <div className="blog-section">
               <h3>Twitter / X Thread (10 tweets)</h3>
 
@@ -433,7 +472,6 @@ Bookmark this if you're learning Java in 2025 🙏
               </div>
             </div>
 
-            {/* TikTok */}
             <div className="blog-section">
               <h3>TikTok / YouTube Short Script</h3>
               <div className="tiktok-card">
@@ -455,7 +493,6 @@ Bookmark this if you're learning Java in 2025 🙏
             </div>
           </>
         )}
-
       </div>
     </div>
   );

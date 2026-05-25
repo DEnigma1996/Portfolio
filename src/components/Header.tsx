@@ -1,15 +1,21 @@
-import { useState, useEffect } from 'react';
-import type { Page } from '../App';
+import { useEffect, useState } from 'react';
+import { Link, NavLink } from 'react-router-dom';
 import './Header.css';
 
 interface HeaderProps {
   isDark: boolean;
   toggleTheme: () => void;
-  page: Page;
-  setPage: (p: Page) => void;
 }
 
-export default function Header({ isDark, toggleTheme, page, setPage }: HeaderProps) {
+const SECTION_LINKS = [
+  { id: 'about', label: 'About' },
+  { id: 'skills', label: 'Skills' },
+  { id: 'projects', label: 'Projects' },
+  { id: 'experience', label: 'Experience' },
+  { id: 'contact', label: 'Contact' },
+];
+
+export default function Header({ isDark, toggleTheme }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -19,53 +25,32 @@ export default function Header({ isDark, toggleTheme, page, setPage }: HeaderPro
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const scrollToSection = (id: string) => {
-    if (page !== 'home') {
-      setPage('home');
-      setTimeout(() => {
-        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-    } else {
-      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-    }
-    setIsMobileMenuOpen(false);
-  };
-
-  const goHome = () => {
-    setPage('home');
-    setIsMobileMenuOpen(false);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const goLearn = () => {
-    setPage('learn');
-    setIsMobileMenuOpen(false);
-  };
-
   return (
     <header className={`header ${isScrolled ? 'scrolled' : ''}`}>
       <div className="header-container">
-        <div className="logo" onClick={goHome}>EN</div>
+        <Link className="logo" to="/" onClick={() => setIsMobileMenuOpen(false)}>EN</Link>
 
         <nav className={`nav ${isMobileMenuOpen ? 'open' : ''}`}>
-          {page === 'home' ? (
-            <>
-              <a onClick={() => scrollToSection('about')}>About</a>
-              <a onClick={() => scrollToSection('skills')}>Skills</a>
-              <a onClick={() => scrollToSection('projects')}>Projects</a>
-              <a onClick={() => scrollToSection('experience')}>Experience</a>
-              <a onClick={() => scrollToSection('contact')}>Contact</a>
-            </>
-          ) : (
-            <a onClick={goHome}>← Portfolio</a>
-          )}
-          <a
-            onClick={goLearn}
-            className={page === 'learn' ? 'nav-active' : ''}
-            style={page === 'learn' ? { color: 'var(--primary-color)' } : {}}
+          {SECTION_LINKS.map((item) => (
+            <Link key={item.id} to={`/#${item.id}`} onClick={() => setIsMobileMenuOpen(false)}>
+              {item.label}
+            </Link>
+          ))}
+
+          <NavLink
+            to="/learn"
+            className={({ isActive }) => (isActive ? 'nav-active' : undefined)}
+            onClick={() => setIsMobileMenuOpen(false)}
           >
-            Learn Java
-          </a>
+            Learn
+          </NavLink>
+          <NavLink
+            to="/blog"
+            className={({ isActive }) => (isActive ? 'nav-active' : undefined)}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Blog
+          </NavLink>
         </nav>
 
         <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle theme">
@@ -74,7 +59,7 @@ export default function Header({ isDark, toggleTheme, page, setPage }: HeaderPro
 
         <button
           className="mobile-menu-toggle"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          onClick={() => setIsMobileMenuOpen((prev) => !prev)}
           aria-label="Toggle menu"
         >
           <span></span>
