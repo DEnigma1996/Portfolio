@@ -1,11 +1,7 @@
-import type { Page } from '../App';
+import { Link } from 'react-router-dom';
 import './Footer.css';
 
-interface FooterProps {
-  setPage: (p: Page) => void;
-}
-
-export default function Footer({ setPage }: FooterProps) {
+export default function Footer() {
   return (
     <footer className="footer">
       <div className="footer-content">
@@ -17,18 +13,15 @@ export default function Footer({ setPage }: FooterProps) {
         <div className="footer-section">
           <h4>Quick Links</h4>
           <nav className="footer-nav">
-            <a href="#about">About</a>
-            <a href="#skills">Skills</a>
-            <a href="#projects">Projects</a>
-            <a href="#experience">Experience</a>
-            <a href="#contact">Contact</a>
-            <a
-              href="#learn"
-              onClick={e => { e.preventDefault(); setPage('learn'); window.scrollTo({ top: 0 }); }}
-              style={{ color: 'var(--primary-color)', fontWeight: 600 }}
-            >
+            <Link to="/#about">About</Link>
+            <Link to="/#skills">Skills</Link>
+            <Link to="/#projects">Projects</Link>
+            <Link to="/#experience">Experience</Link>
+            <Link to="/#contact">Contact</Link>
+            <Link to="/learn" style={{ color: 'var(--primary-color)', fontWeight: 600 }}>
               📚 Java Course
-            </a>
+            </Link>
+            <Link to="/blog">Tech Blog</Link>
           </nav>
         </div>
 

@@ -1,38 +1,36 @@
 import { useState, useEffect } from 'react';
-import type { Page } from '../App';
+import { useNavigate } from 'react-router-dom';
 import './Hero.css';
 
-interface HeroProps {
-  setPage: (p: Page) => void;
-}
+const TYPING_TEXTS = [
+  'Full-Stack Java Developer',
+  'Backend Architect',
+  'Problem Solver',
+  'Clean Code Advocate',
+];
 
-export default function Hero({ setPage }: HeroProps) {
+export default function Hero() {
   const [displayText, setDisplayText] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
-  const texts = [
-    'Full-Stack Java Developer',
-    'Backend Architect',
-    'Problem Solver',
-    'Clean Code Advocate',
-  ];
   const [textIndex, setTextIndex] = useState(0);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const currentText = texts[textIndex];
+    const currentText = TYPING_TEXTS[textIndex];
     if (currentIndex < currentText.length) {
       const timeout = setTimeout(() => {
         setDisplayText(currentText.substring(0, currentIndex + 1));
-        setCurrentIndex(currentIndex + 1);
+        setCurrentIndex((prev) => prev + 1);
       }, 100);
       return () => clearTimeout(timeout);
-    } else {
-      const timeout = setTimeout(() => {
-        setCurrentIndex(0);
-        setDisplayText('');
-        setTextIndex((textIndex + 1) % texts.length);
-      }, 2000);
-      return () => clearTimeout(timeout);
     }
+
+    const timeout = setTimeout(() => {
+      setCurrentIndex(0);
+      setDisplayText('');
+      setTextIndex((prev) => (prev + 1) % TYPING_TEXTS.length);
+    }, 2000);
+    return () => clearTimeout(timeout);
   }, [currentIndex, textIndex]);
 
   const scrollToSection = (id: string) => {
@@ -58,7 +56,7 @@ export default function Hero({ setPage }: HeroProps) {
             <button className="btn btn-secondary" onClick={() => scrollToSection('contact')}>
               Contact Me
             </button>
-            <button className="btn btn-learn" onClick={() => setPage('learn')}>
+            <button className="btn btn-learn" onClick={() => navigate('/learn')}>
               📚 Java Course
             </button>
           </div>

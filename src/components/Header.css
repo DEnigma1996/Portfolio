@@ -70,6 +70,14 @@
   width: 100%;
 }
 
+.nav a.nav-active {
+  color: var(--primary-color);
+}
+
+.nav a.nav-active::after {
+  width: 100%;
+}
+
 .theme-toggle {
   background: var(--card-bg);
   border: none;
